@@ -5,7 +5,6 @@ import (
 	"bevelctl/support"
 	"fmt"
 	"os"
-
 	"github.com/manifoldco/promptui"
 )
 

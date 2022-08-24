@@ -1,4 +1,4 @@
-package tpls
+package fabric
 
 const Fabric = `
 ##############################################################################################
@@ -45,7 +45,8 @@ network:
   # For RAFT consensus, have odd number (2n+1) of orderers for consensus agreement to have a majority.
   orderers:
     - orderer:
-{{ range $i, $e := untilStep 1 . 1 }}
+{{ $IncrementedOrdererCount := .OrdererCount | add1 | int }}
+{{ range $i, $e := untilStep 1 $IncrementedOrdererCount 1 }}
       type: orderer
       name: orderer{{ $e }}
       org_name: supplychain                 # org_name should match one organization definition below in organizations: key            

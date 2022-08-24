@@ -1,5 +1,5 @@
-package config
+package corda
 
-func CordaNetworkConfig() string {
+func DevCordaNetworkConfig() string {
 	return "Corda ki bhi banani hai network.yaml.. bhot kaam hai re baba"
 }
