@@ -56,7 +56,7 @@ func DevFabricNetworkConfig(platform string) string {
 	}
 	err = fabricTemplate.Execute(&FabricConfigFile, inputVars)
 	if err != nil {
-		log.Fatal("Parse: ", err)
+		log.Fatal("Execute: ", err)
 	}
 	return FabricConfigFile.String()
 }

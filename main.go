@@ -2,10 +2,11 @@ package main
 
 import (
 	"bevelctl/config"
+	"bevelctl/docker"
+	"bevelctl/k8ind"
 	"bevelctl/support"
 	"fmt"
 	"os"
-	"github.com/manifoldco/promptui"
 )
 
 func main() {
@@ -16,46 +17,19 @@ func main() {
 	fmt.Println("--------------------------------------------")
 
 	for {
-		environment := environmentSelect()
+		environment := support.EnvironmentSelect()
 		if environment == support.SupportedEnvironments[len(support.SupportedEnvironments)-1] {
 			os.Exit(0)
 		}
-		platform := platformSelect()
+		platform := support.PlatformSelect()
 		if platform != support.SupportedPlatforms[len(support.SupportedPlatforms)-1] {
 			networkyaml := config.CreateNetworkConfig(environment, platform)
 			fmt.Println(networkyaml)
+			docker.InstallDocker()
+			k8ind.SetupKind()
+			k8ind.KindConfig()
+			break
 		}
 	}
 
-}
-
-func environmentSelect() string {
-	envSelect := promptui.Select{
-		Label: "Please select the required environment",
-		Items: support.SupportedEnvironments,
-	}
-	_, envSelectResult, err := envSelect.Run()
-
-	if err != nil {
-		fmt.Printf("Prompt failed while selecting environment %v\n", err)
-		os.Exit(1)
-	}
-
-	return envSelectResult
-}
-
-func platformSelect() string {
-	platSelect := promptui.Select{
-		Label: "Please select the required platform",
-		Items: support.SupportedPlatforms,
-	}
-
-	_, platSelectResult, err := platSelect.Run()
-
-	if err != nil {
-		fmt.Printf("Prompt failed while selecting platform %v\n", err)
-		os.Exit(1)
-	}
-
-	return platSelectResult
 }
