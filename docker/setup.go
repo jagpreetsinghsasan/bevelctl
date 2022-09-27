@@ -20,7 +20,7 @@ func setupSnap(selectedOS string, logger *zap.Logger) {
 }
 
 func InstallDocker(selectedOS string, logger *zap.Logger) {
-	utils.ClearScreen()
+	// utils.ClearScreen()
 	utils.PrintBox("Docker", "Installing...")
 	if selectedOS == support.SupportedOS[0] && utils.CheckBinary("docker",logger) {
 		setupSnap(selectedOS, logger)

@@ -56,7 +56,7 @@ func getInputs(logger *zap.Logger) KindClusterConfig {
 }
 
 func KindConfig(selectedOS string, logger *zap.Logger) {
-	utils.ClearScreen()
+	// utils.ClearScreen()
 	logger.Info("Setting up the kind cluster")
 	var inputVars = getInputs(logger)
 	var KindConfigFile bytes.Buffer
