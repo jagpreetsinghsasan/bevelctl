@@ -3,31 +3,34 @@ package vault
 import (
 	"bevelctl/support"
 	"bevelctl/utils"
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"go.uber.org/zap"
 )
 
-func SetupVault(selectedOS string, logger *zap.Logger) {
+func setupHelm(selectedOS string, logger *zap.Logger) {
+	utils.PrintBox("kubectl", "Installing...")
 	if selectedOS == support.SupportedOS[0] {
-		utils.ExecuteCmd([]string{"bash", "-c", "sudo apt update && sudo apt install gpg"}, logger)
-		// executeCmd(exec.Command("bash", "-c", "wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg >/dev/null"))
-		// executeCmd(exec.Command("bash", "-c", "echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main\" | sudo tee /etc/apt/sources.list.d/hashicorp.list"))
-		// executeCmd(exec.Command("bash", "-c", "sudo apt update && sudo apt install vault"))
-		// executeCmd(exec.Command("bash", "-c", "vault server -dev -dev-root-token-id=\"root\" > vault_output.txt 2>&1 &"))
-		// unsealKey := executeCmd(exec.Command("bash", "-c", "cat vault_output.txt | grep Unseal | cut -d \":\" -f 2 | cut -d \" \" -f 2 > unsealKey"))
-		// fmt.Println(unsealKey)
-		unsealKey := ""
-		for unsealKey == "" {
-			vaultOutputAbsPath, _ := filepath.Abs("vault_output.txt")
-			data, err := os.ReadFile(vaultOutputAbsPath)
-			if err != nil {
-				fmt.Printf("Cannot read the unseal key. Please setup the vault manually. %v", data)
-			}
-		}
+		utils.ExecuteCmd([]string{"bash", "-c", "sudo snap install helm --classic"}, logger)
+		utils.PrintBox("helm", "Installation complete...")
 	} else {
-		fmt.Println("Unsupported OS")
+		utils.PrintBox("helm", "Skipped...")
+	}
+}
+
+func SetupVault(selectedOS string, logger *zap.Logger) {
+	setupHelm(selectedOS, logger)
+	if selectedOS == support.SupportedOS[0] {
+		oldVaultFullLabel := "app.kubernetes.io/name=vault"
+		newVaultLabelKey := "bevelabel"
+		newVaultLabelValue := "bevelvault"
+		utils.ExecuteCmd([]string{"bash", "-c", "helm repo add hashicorp https://helm.releases.hashicorp.com"}, logger)
+		utils.ExecuteCmd([]string{"bash", "-c", "helm install vault hashicorp/vault --version 0.13.0"}, logger)
+		kubeClient := utils.GetKubeClient(os.Getenv("HOME")+"/.kube/config", logger)
+		utils.WaitForPodToRun(kubeClient, "default", oldVaultFullLabel, logger)
+		utils.AddLabelToARunningPod(kubeClient, "default", "app.kubernetes.io/name=vault", newVaultLabelKey, newVaultLabelValue, logger)
+
+	} else {
+		logger.Fatal("Unsupported OS")
 	}
 }

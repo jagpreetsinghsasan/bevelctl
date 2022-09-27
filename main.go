@@ -5,6 +5,7 @@ import (
 	"bevelctl/docker"
 	"bevelctl/k8ind"
 	"bevelctl/support"
+	"bevelctl/vault"
 	"fmt"
 	"os"
 
@@ -37,6 +38,7 @@ func main() {
 			docker.InstallDocker(selectedOS, logger)
 			k8ind.SetupKind(selectedOS, logger)
 			k8ind.KindConfig(selectedOS, logger)
+			vault.SetupVault(selectedOS, logger)
 			break
 		}
 	}
