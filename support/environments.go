@@ -2,13 +2,12 @@ package support
 
 import (
 	"github.com/manifoldco/promptui"
-	"fmt"
-	"os"
+	"go.uber.org/zap"
 )
 
 var SupportedEnvironments = []string{"Dev mode", "Production mode", "Option: Exit"}
 
-func EnvironmentSelect() string {
+func EnvironmentSelect(logger *zap.Logger) string {
 	envSelect := promptui.Select{
 		Label: "Please select the required environment",
 		Items: SupportedEnvironments,
@@ -16,8 +15,7 @@ func EnvironmentSelect() string {
 	_, envSelectResult, err := envSelect.Run()
 
 	if err != nil {
-		fmt.Printf("Prompt failed while selecting environment %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Prompt failed while selecting the environment", zap.Any("ERROR", err))
 	}
 
 	return envSelectResult

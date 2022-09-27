@@ -3,14 +3,12 @@ package fabric
 import (
 	"bevelctl/tpls/fabric"
 	"bytes"
-	"fmt"
 	"html/template"
-	"log"
-	"os"
 	"strconv"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/manifoldco/promptui"
+	"go.uber.org/zap"
 )
 
 type DevFabric struct {
@@ -18,7 +16,7 @@ type DevFabric struct {
 	OrgCount     int
 }
 
-func getInputs() DevFabric {
+func getInputs(logger *zap.Logger) DevFabric {
 
 	ordererCount := promptui.Prompt{
 		Label:   "Enter the orderer count: ",
@@ -26,8 +24,7 @@ func getInputs() DevFabric {
 	}
 	ordererCountResult, err := ordererCount.Run()
 	if err != nil {
-		fmt.Printf("Prompt failed entering the orderer count %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Prompt failed entering the orderer count", zap.Any("ERROR", err))
 	}
 
 	orgCount := promptui.Prompt{
@@ -36,8 +33,7 @@ func getInputs() DevFabric {
 	}
 	orgCountResult, err := orgCount.Run()
 	if err != nil {
-		fmt.Printf("Prompt failed entering the organization count %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Prompt failed entering the organization count", zap.Any("ERROR", err))
 	}
 
 	ordererCountRes, _ := strconv.Atoi(ordererCountResult)
@@ -46,17 +42,17 @@ func getInputs() DevFabric {
 	return DevFabric{OrdererCount: ordererCountRes, OrgCount: orgCountRes}
 }
 
-func DevFabricNetworkConfig(platform string) string {
-	var inputVars = getInputs()
+func DevFabricNetworkConfig(platform string, selectedOS string, logger *zap.Logger) string {
+	var inputVars = getInputs(logger)
 	var FabricConfigFile bytes.Buffer
 	fabricTemplate := template.New("Dev Fabric Template").Funcs(sprig.FuncMap())
 	fabricTemplate, err := fabricTemplate.Parse(fabric.Fabric)
 	if err != nil {
-		log.Fatal("Parse: ", err)
+		logger.Fatal("Failed to parse the network.yaml file", zap.Any("ERROR", err))
 	}
 	err = fabricTemplate.Execute(&FabricConfigFile, inputVars)
 	if err != nil {
-		log.Fatal("Execute: ", err)
+		logger.Fatal("Failed to execute the operation", zap.Any("ERROR", err))
 	}
 	return FabricConfigFile.String()
 }

@@ -1,5 +1,5 @@
 package config
 
 func CreateProdModeNetworkConfig() string {
-	return "Ye bhi banani baaki hai"
+	return "Production ready features coming soon!"
 }

@@ -2,13 +2,12 @@ package support
 
 import (
 	"github.com/manifoldco/promptui"
-	"fmt"
-	"os"
+	"go.uber.org/zap"
 )
 
 var SupportedPlatforms = []string{"Hyperledger Fabric", "R3 Corda", "Option: Go Back to the Main Menu"}
 
-func PlatformSelect() string {
+func PlatformSelect(logger *zap.Logger) string {
 	platSelect := promptui.Select{
 		Label: "Please select the required platform",
 		Items: SupportedPlatforms,
@@ -17,8 +16,7 @@ func PlatformSelect() string {
 	_, platSelectResult, err := platSelect.Run()
 
 	if err != nil {
-		fmt.Printf("Prompt failed while selecting platform %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Prompt failed while selecting the platform", zap.Any("ERROR", err))
 	}
 
 	return platSelectResult

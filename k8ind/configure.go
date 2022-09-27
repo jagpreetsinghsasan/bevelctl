@@ -4,14 +4,13 @@ import (
 	"bevelctl/tpls/kind"
 	"bevelctl/utils"
 	"bytes"
-	"fmt"
 	"html/template"
-	"log"
 	"os"
 	"strconv"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/manifoldco/promptui"
+	"go.uber.org/zap"
 )
 
 type KindClusterConfig struct {
@@ -19,15 +18,14 @@ type KindClusterConfig struct {
 	WorkerNodeCount   int
 }
 
-func getInputs() KindClusterConfig {
+func getInputs(logger *zap.Logger) KindClusterConfig {
 	controlPlaneCount := promptui.Prompt{
 		Label:   "Enter the number of control plane nodes: ",
 		Default: "1",
 	}
 	controlPlaneCountResult, err := controlPlaneCount.Run()
 	if err != nil {
-		fmt.Printf("Prompt failed entering the control plane node count %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Prompt failed entering the control plane node count", zap.Any("ERROR", err))
 	}
 
 	workerNodeCount := promptui.Prompt{
@@ -36,8 +34,7 @@ func getInputs() KindClusterConfig {
 	}
 	workerNodeCountCountResult, err := workerNodeCount.Run()
 	if err != nil {
-		fmt.Printf("Prompt failed entering the worker node count %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Prompt failed entering the worker node count", zap.Any("ERROR", err))
 	}
 
 	controlPlaneCountRes, _ := strconv.Atoi(controlPlaneCountResult)
@@ -58,31 +55,31 @@ func getInputs() KindClusterConfig {
 	return KindClusterConfig{ControlPlaneCount: controlPlaneCountRes, WorkerNodeCount: workerNodeCountRes}
 }
 
-func KindConfig() {
+func KindConfig(selectedOS string, logger *zap.Logger) {
 	utils.ClearScreen()
-	fmt.Println("Setting up the kind cluster")
-	var inputVars = getInputs()
+	logger.Info("Setting up the kind cluster")
+	var inputVars = getInputs(logger)
 	var KindConfigFile bytes.Buffer
 	kindTemplate := template.New("Kind Config File").Funcs(sprig.FuncMap())
 	kindTemplate, err := kindTemplate.Parse(kind.Kind)
 	if err != nil {
-		log.Fatal("Parse: ", err)
+		logger.Fatal("Error during parsing the kind config file", zap.Any("ERROR", err))
 	}
 	err = kindTemplate.Execute(&KindConfigFile, inputVars)
 	if err != nil {
-		log.Fatal("Execute: ", err)
+		logger.Fatal("Error during executing the tpl file with vars", zap.Any("ERROR", err))
 	}
 
 	os.Mkdir("build", os.ModePerm)
 	file, err := os.Create("build/kindconfig.yaml")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("Failed while creating the build/kindconfig.yaml file", zap.Any("ERROR", err))
 	}
 	defer file.Close()
 	file.WriteString(KindConfigFile.String())
-	if(utils.CheckCluster()){
-		os.Exit(1)
-	}else{
-		utils.ExecuteCmd([]string{"bash", "-c", "kind create cluster --config build/kindconfig.yaml --name bevelcluster"})
+	if utils.CheckCluster(logger) {
+		logger.Fatal("Exiting...")
+	} else {
+		utils.ExecuteCmd([]string{"bash", "-c", "kind create cluster --config build/kindconfig.yaml --name bevelcluster"}, logger)
 	}
 }

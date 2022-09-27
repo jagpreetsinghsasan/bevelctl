@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"go.uber.org/zap"
 )
 
-func SetupVault() {
-	osSelectResult := support.SelectOS()
-	if osSelectResult == support.SupportedOS[0] {
-		utils.ExecuteCmd([]string{"bash", "-c", "sudo apt update && sudo apt install gpg"})
+func SetupVault(selectedOS string, logger *zap.Logger) {
+	if selectedOS == support.SupportedOS[0] {
+		utils.ExecuteCmd([]string{"bash", "-c", "sudo apt update && sudo apt install gpg"}, logger)
 		// executeCmd(exec.Command("bash", "-c", "wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg >/dev/null"))
 		// executeCmd(exec.Command("bash", "-c", "echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main\" | sudo tee /etc/apt/sources.list.d/hashicorp.list"))
 		// executeCmd(exec.Command("bash", "-c", "sudo apt update && sudo apt install vault"))

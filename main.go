@@ -7,6 +7,8 @@ import (
 	"bevelctl/support"
 	"fmt"
 	"os"
+
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -16,18 +18,25 @@ func main() {
 	fmt.Println("              Cli-fying Bevel               ")
 	fmt.Println("--------------------------------------------")
 
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+
 	for {
-		environment := support.EnvironmentSelect()
+		environment := support.EnvironmentSelect(logger)
 		if environment == support.SupportedEnvironments[len(support.SupportedEnvironments)-1] {
 			os.Exit(0)
 		}
-		platform := support.PlatformSelect()
+		selectedOS := support.SelectOS(logger)
+		if selectedOS == support.SupportedOS[len(support.SupportedOS)-1] {
+			os.Exit(0)
+		}
+		platform := support.PlatformSelect(logger)
 		if platform != support.SupportedPlatforms[len(support.SupportedPlatforms)-1] {
-			networkyaml := config.CreateNetworkConfig(environment, platform)
+			networkyaml := config.CreateNetworkConfig(environment, platform, selectedOS, logger)
 			fmt.Println(networkyaml)
-			docker.InstallDocker()
-			k8ind.SetupKind()
-			k8ind.KindConfig()
+			docker.InstallDocker(selectedOS, logger)
+			k8ind.SetupKind(selectedOS, logger)
+			k8ind.KindConfig(selectedOS, logger)
 			break
 		}
 	}

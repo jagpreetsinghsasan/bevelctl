@@ -1,5 +1,5 @@
 package fabric
 
 func ProdFabricNetworkConfig(platform string) string {
-	return "Ye banana hai"
+	return "Production ready features coming soon!"
 }
