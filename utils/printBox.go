@@ -25,5 +25,5 @@ func PrintBox(binaryName string, currentStatus string) {
 
 func PrintBiggerBox(biggerBoxData []BiggerBoxData) {
 	time.Sleep(1 * time.Second)
-	olog.PrintHStrong(biggerBoxData)
+	olog.Print(biggerBoxData)
 }
