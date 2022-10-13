@@ -7,6 +7,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// This function sets up kubectl binary required to perform kubectl commands
+// TODO: Remove the dependency of this binary completely and use k8s go-client code
 func setupKubectl(selectedOS string, logger *zap.Logger) {
 	// utils.ClearScreen()
 	utils.PrintBox("kubectl", "Installing...")
@@ -18,6 +20,8 @@ func setupKubectl(selectedOS string, logger *zap.Logger) {
 	}
 }
 
+// This function sets up kind - kubernetes in docker
+// TODO: Remove sudo from the involved commands
 func SetupKind(selectedOS string, logger *zap.Logger) {
 	setupKubectl(selectedOS, logger)
 	// utils.ClearScreen()

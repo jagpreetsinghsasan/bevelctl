@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Function to create the vault config file required to patch the vault helm chart
 func CreateVaultConfig(logger *zap.Logger) {
 	var VaultConfigFile bytes.Buffer
 	vaultTemplate := template.New("Vault Config File").Funcs(template.FuncMap(sprig.FuncMap()))

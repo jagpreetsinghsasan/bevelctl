@@ -8,6 +8,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// Function to check if the bevelcluster is already present or not
+// If present, the user is requested to back up any important data in the bevelcluster and delete it using
+// kind delete clusters bevelcluster
 func CheckCluster(logger *zap.Logger) bool {
 	logger.Info("Checking if the bevelcluster exists or not")
 	var stdout bytes.Buffer

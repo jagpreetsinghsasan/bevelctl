@@ -17,26 +17,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-// get the kubernetes client, which is required for other queries to work
-// func GetKubeClient(configPath string, logger *zap.Logger) *kubernetes.Clientset {
-// 	data, err := ioutil.ReadFile(configPath)
-// 	if err != nil {
-// 		logger.Fatal("Could not read kube config", zap.Any("ERROR", err))
-// 	}
-
-// 	kubeConfig, err := clientcmd.RESTConfigFromKubeConfig(data)
-// 	if err != nil {
-// 		logger.Fatal("Could not parse kube config", zap.Any("ERROR", err))
-// 	}
-
-// 	kubeClient, err := kubernetes.NewForConfig(kubeConfig)
-// 	if err != nil {
-// 		logger.Fatal("Could not get the kube client", zap.Any("ERROR", err))
-// 	}
-
-// 	return kubeClient
-// }
-
+// Utility function to get the kube client, required by other k8s functions to perform
 func GetKubeClient(configPath string, clusterContext string, logger *zap.Logger) *kubernetes.Clientset {
 	configLoadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: configPath}
 	configOverrides := &clientcmd.ConfigOverrides{CurrentContext: clusterContext}
@@ -53,8 +34,8 @@ func GetKubeClient(configPath string, clusterContext string, logger *zap.Logger)
 	return kubeClient
 }
 
+// Utility function to get the k8s rest config file, required for certain functions
 func GetK8sRestConfig(configPath string, clusterContext string, logger *zap.Logger) *rest.Config {
-
 	configLoadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: configPath}
 	configOverrides := &clientcmd.ConfigOverrides{CurrentContext: clusterContext}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(configLoadingRules, configOverrides)
@@ -67,6 +48,7 @@ func GetK8sRestConfig(configPath string, clusterContext string, logger *zap.Logg
 	return k8sRestConfig
 }
 
+// Utility function to get the list of kubernetes node IP(s)
 func GetK8sNodeIP(kubeClient *kubernetes.Clientset, logger *zap.Logger) []string {
 	nodes, err := kubeClient.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -81,6 +63,7 @@ func GetK8sNodeIP(kubeClient *kubernetes.Clientset, logger *zap.Logger) []string
 	return nodeIPs
 }
 
+// Utility function to the get the NodePort of the given service within a namespace
 func GetK8sServicePort(kubeClient *kubernetes.Clientset, namespace string, serviceName string, logger *zap.Logger) []v1.ServicePort {
 	services, err := kubeClient.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -94,7 +77,7 @@ func GetK8sServicePort(kubeClient *kubernetes.Clientset, namespace string, servi
 	return nil
 }
 
-// get all the pods as a list within a given namespace
+// Utility function to get all the pods as a list within a given namespace
 func GetAllPodsOfNamespace(kubeClient *kubernetes.Clientset, namespace string, logger *zap.Logger) *v1.PodList {
 	podInterface := kubeClient.CoreV1().Pods(namespace)
 	podList, err := podInterface.List(context.TODO(), metav1.ListOptions{})
@@ -107,7 +90,7 @@ func GetAllPodsOfNamespace(kubeClient *kubernetes.Clientset, namespace string, l
 	return podList
 }
 
-// wait for a pod to run based on its pod label
+// Utility function to wait for a pod to run based on its pod label
 func WaitForPodToRun(kubeClient *kubernetes.Clientset, namespace string, podLabel string, logger *zap.Logger) {
 	for true {
 		// waiting for the resources to have pending state
@@ -128,7 +111,7 @@ func WaitForPodToRun(kubeClient *kubernetes.Clientset, namespace string, podLabe
 	}
 }
 
-// get all the pods of the mentioned namespace based on a particular name
+// Utility function to get all the pods of the mentioned namespace based on a particular name
 func GetAllPodsOfNamespaceByLabel(kubeClient *kubernetes.Clientset, namespace string, label string, logger *zap.Logger) *v1.PodList {
 	podInterface := kubeClient.CoreV1().Pods(namespace)
 	podList, err := podInterface.List(context.TODO(), metav1.ListOptions{LabelSelector: label})
@@ -138,7 +121,7 @@ func GetAllPodsOfNamespaceByLabel(kubeClient *kubernetes.Clientset, namespace st
 	return podList
 }
 
-// add a label to a pod in a given namespace with an existing label
+// Utility function to add a label to a pod in a given namespace with an existing label
 func AddLabelToARunningPod(kubeClient *kubernetes.Clientset, namespace string, existingLabel string, newLabelKey string, newLabelValue string, logger *zap.Logger) {
 	// waiting for the resources to have pending state
 	for true {
@@ -156,7 +139,7 @@ func AddLabelToARunningPod(kubeClient *kubernetes.Clientset, namespace string, e
 	}
 }
 
-// check if a pod is running in a given cluster within the mentioned namespace
+// Utility function to check if a pod is running in a given cluster within the mentioned namespace
 func CheckIfPodRunning(kubeClient *kubernetes.Clientset, podName string, namespace string) bool {
 	pod, _ := kubeClient.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
 	if pod.Status.Phase == "Running" {
@@ -166,7 +149,7 @@ func CheckIfPodRunning(kubeClient *kubernetes.Clientset, podName string, namespa
 	}
 }
 
-// check if the kubernetes resource exists or not in a given namespace
+// Utility function to check if the kubernetes resource exists or not in a given namespace
 func CheckK8sResource(kubeClient *kubernetes.Clientset, resourceName string, resourceType string, namespace string) bool {
 	if resourceType == "pod" {
 		return CheckIfPodRunning(kubeClient, resourceName, namespace)
@@ -175,8 +158,8 @@ func CheckK8sResource(kubeClient *kubernetes.Clientset, resourceName string, res
 	}
 }
 
+// Utility function to execute a command within the mentioned container of a given namespace
 func KubectlExecCmd(k8sRestConfig *rest.Config, podName string, containerName string, namespace string, cmdString string, logger *zap.Logger) string {
-
 	buf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
 
@@ -184,7 +167,6 @@ func KubectlExecCmd(k8sRestConfig *rest.Config, podName string, containerName st
 	if err != nil {
 		logger.Fatal("Could not get the kube client", zap.Any("ERROR", err))
 	}
-
 	if CheckK8sResource(kubeClient, podName, "pod", namespace) {
 		execRequest := kubeClient.CoreV1().RESTClient().Post().Resource("pods").Name(podName).Namespace(namespace).SubResource("exec").VersionedParams(&v1.PodExecOptions{
 			Command: []string{"/bin/sh", "-c", cmdString},
@@ -197,7 +179,6 @@ func KubectlExecCmd(k8sRestConfig *rest.Config, podName string, containerName st
 		if err != nil {
 			logger.Fatal("Could not get the bidirectional multiplexed stream from the corresponding k8s rest config", zap.Any("ERROR", err))
 		}
-
 		err = exec.Stream(remotecommand.StreamOptions{
 			Stdout: buf,
 			Stderr: errBuf,
@@ -205,9 +186,7 @@ func KubectlExecCmd(k8sRestConfig *rest.Config, podName string, containerName st
 		if err != nil {
 			logger.Fatal("Failed executing command: "+cmdString+" on "+containerName+":"+podName+" in the namespace "+namespace, zap.Any("ERROR", err))
 		}
-
 		return buf.String()
-
 	} else {
 		logger.Fatal("The requested pod "+podName+" doesn't exist in the namespace "+namespace, zap.Any("ERROR", err))
 		return ""

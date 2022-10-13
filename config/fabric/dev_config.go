@@ -11,11 +11,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// This struct includes the user input variables with default values as
+// orderer count as 1 and organization count as 1
 type DevFabric struct {
 	OrdererCount int
 	OrgCount     int
 }
 
+// This function takes the DevFabric struct input from the user and returns the constructed struct
+// to the caller function
 func getInputs(logger *zap.Logger) DevFabric {
 
 	ordererCount := promptui.Prompt{
@@ -42,6 +46,9 @@ func getInputs(logger *zap.Logger) DevFabric {
 	return DevFabric{OrdererCount: ordererCountRes, OrgCount: orgCountRes}
 }
 
+// This function constructs the network.yaml file customized as per the DevFabric struct
+// and returns the network.yaml as a string
+// TODO: Fix this code to include auto usage of the network.yaml from Bevel repository in absence of custom input
 func DevFabricNetworkConfig(platform string, selectedOS string, logger *zap.Logger) string {
 	var inputVars = getInputs(logger)
 	var FabricConfigFile bytes.Buffer

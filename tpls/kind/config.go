@@ -1,5 +1,6 @@
 package kind
 
+// Templated string containing the custom kind configuration file
 const Kind = `
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4

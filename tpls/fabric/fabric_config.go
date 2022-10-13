@@ -1,5 +1,6 @@
 package fabric
 
+// Templated string containing custom Fabric network.yaml
 const Fabric = `
 ##############################################################################################
 #  Copyright Accenture. All Rights Reserved.

@@ -13,11 +13,16 @@ import (
 	"go.uber.org/zap"
 )
 
+// This struct is used to take user inputs where
+// ControlPlaneCount refers to the k8s master node count
+// WorkerNodeCount referes to the k8s worker node count
 type KindClusterConfig struct {
 	ControlPlaneCount int
 	WorkerNodeCount   int
 }
 
+// This function takes the user input to construct the KindClusterConfig struct
+// and return this struct
 func getInputs(logger *zap.Logger) KindClusterConfig {
 	controlPlaneCount := promptui.Prompt{
 		Label:   "Enter the number of control plane nodes: ",
@@ -55,6 +60,8 @@ func getInputs(logger *zap.Logger) KindClusterConfig {
 	return KindClusterConfig{ControlPlaneCount: controlPlaneCountRes, WorkerNodeCount: workerNodeCountRes}
 }
 
+// This function creates the config file required by Kind to create cluster
+// and outputs the config file under build directory
 func KindConfig(selectedOS string, logger *zap.Logger) {
 	// utils.ClearScreen()
 	logger.Info("Setting up the kind cluster")

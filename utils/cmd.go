@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// Utility function to execute the mentioned command 
+// and return the command output as a string
 func ExecuteCmd(cmdWithArgs []string, logger *zap.Logger) string {
 	cmd := exec.Command(cmdWithArgs[0], cmdWithArgs[1:]...)
 	var stdoutBuf, stderrBuf bytes.Buffer

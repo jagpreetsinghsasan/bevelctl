@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Function to setup helm binary on the machine
 func setupHelm(selectedOS string, logger *zap.Logger) {
 	utils.PrintBox("kubectl", "Installing...")
 	if selectedOS == support.SupportedOS[0] {
@@ -21,6 +22,7 @@ func setupHelm(selectedOS string, logger *zap.Logger) {
 	}
 }
 
+// Function to get the formatted vault unseal key string
 func getUnsealKey(vaultConfig string) string {
 	unsealkeyString := strings.Split(vaultConfig, "\n")[0]
 	unsealKeyValue := strings.Split(unsealkeyString, ": ")[1]
@@ -28,6 +30,7 @@ func getUnsealKey(vaultConfig string) string {
 	return unsealKeyValue
 }
 
+// Function to get the formatted vault inital root token string
 func getInitalRootToken(vaultConfig string) string {
 	initialRootTokenString := strings.Split(vaultConfig, "\n")[2]
 	initialRootTokenValue := strings.Split(initialRootTokenString, ":")[1]
@@ -35,6 +38,8 @@ func getInitalRootToken(vaultConfig string) string {
 	return initialRootTokenValue
 }
 
+// Function to store the vault initial root token and unseal key in a json file
+// for user reference
 func storeVaultCredsInFile(vaultConfig string, logger *zap.Logger) {
 	rootToken := getInitalRootToken(vaultConfig)
 	unsealKey := getUnsealKey(vaultConfig)
@@ -49,6 +54,7 @@ func storeVaultCredsInFile(vaultConfig string, logger *zap.Logger) {
 	file.WriteString(fileData)
 }
 
+// Function to setup vault, initialize and unseal it
 func SetupVault(selectedOS string, logger *zap.Logger) {
 	setupHelm(selectedOS, logger)
 	if selectedOS == support.SupportedOS[0] {
@@ -70,7 +76,6 @@ func SetupVault(selectedOS string, logger *zap.Logger) {
 		utils.ExecuteCmd([]string{"bash", "-c", unsealVaultCmdString}, logger)
 		enableSecretsEngineCmdString := vaultEnvVarsString + `vault secrets enable -version=2 -path=secret kv`
 		utils.ExecuteCmd([]string{"bash", "-c", enableSecretsEngineCmdString}, logger)
-
 	} else {
 		logger.Fatal("Unsupported OS")
 	}
