@@ -5,6 +5,7 @@ import (
 	"bevelctl/utils"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"go.uber.org/zap"
@@ -55,14 +56,20 @@ func SetupVault(selectedOS string, logger *zap.Logger) {
 		newVaultLabelKey := "bevelabel"
 		newVaultLabelValue := "bevelvault"
 		clusterContext := "kind-bevelcluster"
+		CreateVaultConfig(logger)
 		utils.ExecuteCmd([]string{"bash", "-c", "helm repo add hashicorp https://helm.releases.hashicorp.com"}, logger)
-		utils.ExecuteCmd([]string{"bash", "-c", "helm install vault hashicorp/vault --version 0.13.0"}, logger)
+		utils.ExecuteCmd([]string{"bash", "-c", "helm install vault hashicorp/vault --version 0.13.0 -f build/vaultconfig.yaml"}, logger)
 		kubeClient := utils.GetKubeClient(os.Getenv("HOME")+"/.kube/config", clusterContext, logger)
 		utils.WaitForPodToRun(kubeClient, "default", oldVaultFullLabel, logger)
 		utils.AddLabelToARunningPod(kubeClient, "default", "app.kubernetes.io/name=vault", newVaultLabelKey, newVaultLabelValue, logger)
 		restConfig := utils.GetK8sRestConfig(os.Getenv("HOME")+"/.kube/config", "kind-bevelcluster", logger)
 		vaultConfigString := utils.KubectlExecCmd(restConfig, "vault-0", "vault", "default", "vault operator init -key-shares=1 -key-threshold=1 -format=table", logger)
 		storeVaultCredsInFile(vaultConfigString, logger)
+		vaultEnvVarsString := `VAULT_ADDR=http://` + utils.GetK8sNodeIP(kubeClient, logger)[0] + `:` + strconv.FormatInt(int64(utils.GetK8sServicePort(kubeClient, "default", "vault-ui", logger)[0].NodePort), 10) + `; VAULT_TOKEN=` + getInitalRootToken(vaultConfigString) + `; `
+		unsealVaultCmdString := vaultEnvVarsString + `vault operator unseal ` + getUnsealKey(vaultConfigString)
+		utils.ExecuteCmd([]string{"bash", "-c", unsealVaultCmdString}, logger)
+		enableSecretsEngineCmdString := vaultEnvVarsString + `vault secrets enable -version=2 -path=secret kv`
+		utils.ExecuteCmd([]string{"bash", "-c", enableSecretsEngineCmdString}, logger)
 
 	} else {
 		logger.Fatal("Unsupported OS")

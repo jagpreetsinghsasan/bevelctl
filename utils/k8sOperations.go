@@ -67,6 +67,33 @@ func GetK8sRestConfig(configPath string, clusterContext string, logger *zap.Logg
 	return k8sRestConfig
 }
 
+func GetK8sNodeIP(kubeClient *kubernetes.Clientset, logger *zap.Logger) []string {
+	nodes, err := kubeClient.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		logger.Fatal("Could not fetch the kubernetes node list", zap.Any("ERROR", err))
+	}
+
+	nodeIPs := []string{}
+	for _, node := range nodes.Items {
+
+		nodeIPs = append(nodeIPs, node.Status.Addresses[0].Address)
+	}
+	return nodeIPs
+}
+
+func GetK8sServicePort(kubeClient *kubernetes.Clientset, namespace string, serviceName string, logger *zap.Logger) []v1.ServicePort {
+	services, err := kubeClient.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		logger.Fatal("Could not fetch the service list in the namespace: "+namespace, zap.Any("ERROR", err))
+	}
+	for _, service := range services.Items {
+		if service.GetName() == serviceName {
+			return service.Spec.Ports
+		}
+	}
+	return nil
+}
+
 // get all the pods as a list within a given namespace
 func GetAllPodsOfNamespace(kubeClient *kubernetes.Clientset, namespace string, logger *zap.Logger) *v1.PodList {
 	podInterface := kubeClient.CoreV1().Pods(namespace)
@@ -168,7 +195,7 @@ func KubectlExecCmd(k8sRestConfig *rest.Config, podName string, containerName st
 		}, scheme.ParameterCodec)
 		exec, err := remotecommand.NewSPDYExecutor(k8sRestConfig, "POST", execRequest.URL())
 		if err != nil {
-			logger.Fatal("Could not get the bidirectional multiplexed stream from k8s rest config", zap.Any("ERROR", err))
+			logger.Fatal("Could not get the bidirectional multiplexed stream from the corresponding k8s rest config", zap.Any("ERROR", err))
 		}
 
 		err = exec.Stream(remotecommand.StreamOptions{
