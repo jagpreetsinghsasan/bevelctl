@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"bevelctl/support"
 	"bevelctl/utils"
 
 	"go.uber.org/zap"
@@ -9,29 +8,30 @@ import (
 
 // This function setups snap which is required for docker to work
 // TODO: removal of sudo
-func setupSnap(selectedOS string, logger *zap.Logger) {
-	utils.PrintBox("Snap", "Installing...")
-	if selectedOS == support.SupportedOS[0] && utils.CheckBinary("snap", logger) {
+func setupSnap(logger *zap.Logger) {
+	logger.Info("Setting up snap")
+	if utils.CheckBinary("snap", logger) {
 		logger.Info("Installing snap app store for Linux")
 		utils.ExecuteCmd([]string{"bash", "-c", "sudo apt update && sudo apt install snapd"}, logger)
-		utils.PrintBox("Snap", "Installation complete...")
+		logger.Info("Snap installed")
 	} else {
-		utils.PrintBox("Snap", "Skipped...")
+		logger.Info("Installation of snap skipped")
 	}
 
 }
 
 // This function setups docker on the machine for the selected OS
 // TODO: removal of sudo
-func InstallDocker(selectedOS string, logger *zap.Logger) {
+func InstallDocker(logger *zap.Logger) {
 	// utils.ClearScreen()
-	utils.PrintBox("Docker", "Installing...")
-	if selectedOS == support.SupportedOS[0] && utils.CheckBinary("docker", logger) {
-		setupSnap(selectedOS, logger)
+	logger.Info("Setting up docker")
+	if utils.CheckBinary("docker", logger) {
+		setupSnap(logger)
 		logger.Info("Installing docker using snap")
 		utils.ExecuteCmd([]string{"bash", "-c", "sudo snap install docker"}, logger)
-		utils.PrintBox("Docker", "Installation complete...")
+		logger.Info("Docker installed")
 	} else {
-		utils.PrintBox("Docker", "Skipped...")
+		logger.Info("Installation of docker skipped")
+		
 	}
 }

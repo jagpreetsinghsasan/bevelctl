@@ -6,7 +6,7 @@ import (
 )
 
 // String array including all the supported platforms
-var SupportedPlatforms = []string{"Hyperledger Fabric", "R3 Corda", "Option: Go Back to the Main Menu"}
+var SupportedPlatforms = []string{"fabric", "corda", "Option: Go Back to the Main Menu"}
 
 // Helper function to select one of the supported platforms
 func PlatformSelect(logger *zap.Logger) string {

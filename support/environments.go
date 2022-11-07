@@ -6,8 +6,7 @@ import (
 )
 
 // String array listing the supported environments
-var SupportedEnvironments = []string{"Dev mode", "Production mode", "Option: Exit"}
-
+var SupportedEnvironments = []string{"dev", "prod", "Option: Exit"}
 
 // Helper function to select one of the supported environments
 func EnvironmentSelect(logger *zap.Logger) string {

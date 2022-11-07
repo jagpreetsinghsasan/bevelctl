@@ -57,7 +57,6 @@ func GetK8sNodeIP(kubeClient *kubernetes.Clientset, logger *zap.Logger) []string
 
 	nodeIPs := []string{}
 	for _, node := range nodes.Items {
-
 		nodeIPs = append(nodeIPs, node.Status.Addresses[0].Address)
 	}
 	return nodeIPs

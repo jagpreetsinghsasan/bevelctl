@@ -1,7 +1,6 @@
 package vault
 
 import (
-	"bevelctl/support"
 	"bevelctl/utils"
 	"fmt"
 	"os"
@@ -12,13 +11,14 @@ import (
 )
 
 // Function to setup helm binary on the machine
-func setupHelm(selectedOS string, logger *zap.Logger) {
-	utils.PrintBox("kubectl", "Installing...")
-	if selectedOS == support.SupportedOS[0] {
+func setupHelm(logger *zap.Logger) {
+	logger.Info("Setting up Helm")
+	if utils.CheckBinary("helm", logger) {
+		logger.Info("Installing helm using snap")
 		utils.ExecuteCmd([]string{"bash", "-c", "sudo snap install helm --classic"}, logger)
-		utils.PrintBox("helm", "Installation complete...")
+		logger.Info("Helm installed")
 	} else {
-		utils.PrintBox("helm", "Skipped...")
+		logger.Info("Installation of helm skipped")
 	}
 }
 
@@ -55,28 +55,24 @@ func storeVaultCredsInFile(vaultConfig string, logger *zap.Logger) {
 }
 
 // Function to setup vault, initialize and unseal it
-func SetupVault(selectedOS string, logger *zap.Logger) {
-	setupHelm(selectedOS, logger)
-	if selectedOS == support.SupportedOS[0] {
-		oldVaultFullLabel := "app.kubernetes.io/name=vault"
-		newVaultLabelKey := "bevelabel"
-		newVaultLabelValue := "bevelvault"
-		clusterContext := "kind-bevelcluster"
-		CreateVaultConfig(logger)
-		utils.ExecuteCmd([]string{"bash", "-c", "helm repo add hashicorp https://helm.releases.hashicorp.com"}, logger)
-		utils.ExecuteCmd([]string{"bash", "-c", "helm install vault hashicorp/vault --version 0.13.0 -f build/vaultconfig.yaml"}, logger)
-		kubeClient := utils.GetKubeClient(os.Getenv("HOME")+"/.kube/config", clusterContext, logger)
-		utils.WaitForPodToRun(kubeClient, "default", oldVaultFullLabel, logger)
-		utils.AddLabelToARunningPod(kubeClient, "default", "app.kubernetes.io/name=vault", newVaultLabelKey, newVaultLabelValue, logger)
-		restConfig := utils.GetK8sRestConfig(os.Getenv("HOME")+"/.kube/config", "kind-bevelcluster", logger)
-		vaultConfigString := utils.KubectlExecCmd(restConfig, "vault-0", "vault", "default", "vault operator init -key-shares=1 -key-threshold=1 -format=table", logger)
-		storeVaultCredsInFile(vaultConfigString, logger)
-		vaultEnvVarsString := `VAULT_ADDR=http://` + utils.GetK8sNodeIP(kubeClient, logger)[0] + `:` + strconv.FormatInt(int64(utils.GetK8sServicePort(kubeClient, "default", "vault-ui", logger)[0].NodePort), 10) + `; VAULT_TOKEN=` + getInitalRootToken(vaultConfigString) + `; `
-		unsealVaultCmdString := vaultEnvVarsString + `vault operator unseal ` + getUnsealKey(vaultConfigString)
-		utils.ExecuteCmd([]string{"bash", "-c", unsealVaultCmdString}, logger)
-		enableSecretsEngineCmdString := vaultEnvVarsString + `vault secrets enable -version=2 -path=secret kv`
-		utils.ExecuteCmd([]string{"bash", "-c", enableSecretsEngineCmdString}, logger)
-	} else {
-		logger.Fatal("Unsupported OS")
-	}
+func SetupVault(logger *zap.Logger) {
+	setupHelm(logger)
+	oldVaultFullLabel := "app.kubernetes.io/name=vault"
+	newVaultLabelKey := "bevelabel"
+	newVaultLabelValue := "bevelvault"
+	clusterContext := "kind-bevelcluster"
+	CreateVaultConfig(logger)
+	utils.ExecuteCmd([]string{"bash", "-c", "helm repo add hashicorp https://helm.releases.hashicorp.com"}, logger)
+	utils.ExecuteCmd([]string{"bash", "-c", "helm install vault hashicorp/vault --version 0.13.0 -f build/vaultconfig.yaml"}, logger)
+	kubeClient := utils.GetKubeClient(os.Getenv("HOME")+"/.kube/config", clusterContext, logger)
+	utils.WaitForPodToRun(kubeClient, "default", oldVaultFullLabel, logger)
+	utils.AddLabelToARunningPod(kubeClient, "default", "app.kubernetes.io/name=vault", newVaultLabelKey, newVaultLabelValue, logger)
+	restConfig := utils.GetK8sRestConfig(os.Getenv("HOME")+"/.kube/config", "kind-bevelcluster", logger)
+	vaultConfigString := utils.KubectlExecCmd(restConfig, "vault-0", "vault", "default", "vault operator init -key-shares=1 -key-threshold=1 -format=table", logger)
+	storeVaultCredsInFile(vaultConfigString, logger)
+	vaultEnvVarsString := `export VAULT_ADDR=http://` + utils.GetK8sNodeIP(kubeClient, logger)[0] + `:` + strconv.FormatInt(int64(utils.GetK8sServicePort(kubeClient, "default", "vault-ui", logger)[0].NodePort), 10) + `; export VAULT_TOKEN=` + getInitalRootToken(vaultConfigString) + `; `
+	unsealVaultCmdString := vaultEnvVarsString + `vault operator unseal ` + getUnsealKey(vaultConfigString)
+	utils.ExecuteCmd([]string{"bash", "-c", unsealVaultCmdString}, logger)
+	enableSecretsEngineCmdString := vaultEnvVarsString + `vault secrets enable -version=2 -path=secret kv`
+	utils.ExecuteCmd([]string{"bash", "-c", enableSecretsEngineCmdString}, logger)
 }
